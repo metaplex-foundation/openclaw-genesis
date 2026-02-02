@@ -54,8 +54,8 @@ export function createLaunchStatusTool(pluginConfig?: UmiConfig) {
             buckets.launchpools.push({
               bucketIndex: i,
               address: lpPda.toString(),
-              baseTokenAllocation: lpData.baseTokenAllocation.toString(),
-              totalDeposited: lpData.totalDepositedQuoteToken?.toString() ?? "0",
+              baseTokenAllocation: lpData.bucket.baseTokenAllocation.toString(),
+              totalDeposited: lpData.quoteTokenDepositTotal?.toString() ?? "0",
             });
           }
 
@@ -68,7 +68,7 @@ export function createLaunchStatusTool(pluginConfig?: UmiConfig) {
             buckets.unlocked.push({
               bucketIndex: i,
               address: ulPda.toString(),
-              baseTokenAllocation: ulData.baseTokenAllocation.toString(),
+              baseTokenAllocation: ulData.bucket.baseTokenAllocation.toString(),
             });
           }
 
@@ -81,7 +81,7 @@ export function createLaunchStatusTool(pluginConfig?: UmiConfig) {
             buckets.raydium.push({
               bucketIndex: i,
               address: ryPda.toString(),
-              baseTokenAllocation: ryData.baseTokenAllocation.toString(),
+              baseTokenAllocation: ryData.bucket.baseTokenAllocation.toString(),
             });
           }
         }

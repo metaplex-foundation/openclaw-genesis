@@ -5,7 +5,9 @@
   "type": "module",
   "main": "index.ts",
   "openclaw": {
-    "extensions": ["./index.ts"]
+    "extensions": [
+      "./index.ts"
+    ]
   },
   "scripts": {
     "check": "tsc --noEmit"
@@ -20,6 +22,7 @@
     "@sinclair/typebox": "0.34.48"
   },
   "devDependencies": {
+    "@types/node": "^25.2.0",
     "typescript": "^5.9.3"
   }
 }
