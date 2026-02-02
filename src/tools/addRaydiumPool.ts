@@ -11,6 +11,8 @@ import {
   findRaydiumBucketSignerPda,
   fetchGenesisAccountV2,
   WRAPPED_SOL_MINT,
+  findLaunchPoolBucketV2Pda,
+  safeFetchLaunchPoolBucketV2,
 } from "@metaplex-foundation/genesis";
 import { getUmi, getNetwork, type UmiConfig } from "../umi.js";
 import {
@@ -38,9 +40,28 @@ export const AddRaydiumPoolSchema = Type.Object({
         "Typically set to after the LaunchPool deposit period ends. Defaults to \"now\".",
     })
   ),
+  /**
+   * Convenience: derive Raydium startTime from an existing LaunchPool bucket.
+   * This avoids clock drift when callers use depositStartTime="now".
+   */
+  startTimeFromLaunchpoolBucketIndex: Type.Optional(
+    Type.Number({
+      description:
+        "If provided and startTime is omitted, derive startTime from the specified LaunchPool bucket's deposit end time.",
+      minimum: 0,
+    })
+  ),
+  startTimeOffsetSeconds: Type.Optional(
+    Type.Number({
+      description:
+        "Optional offset (in seconds) added to the derived LaunchPool deposit end time. Defaults to 60 seconds.",
+      minimum: 0,
+    })
+  ),
   bucketIndex: Type.Optional(
     Type.Number({
-      description: "Bucket index. Defaults to 0. Set this value and reference it in the launchpool's sendQuoteTokenToRaydiumBucketIndex.",
+      description:
+        "Bucket index. Defaults to 0. Set this value and reference it in the launchpool's sendQuoteTokenToRaydiumBucketIndex.",
     })
   ),
 });
@@ -61,6 +82,8 @@ export function createAddRaydiumPoolTool(pluginConfig?: UmiConfig) {
         genesisAccount: string;
         tokenAllocationPercent: number;
         startTime?: string;
+        startTimeFromLaunchpoolBucketIndex?: number;
+        startTimeOffsetSeconds?: number;
         bucketIndex?: number;
       }
     ) {
@@ -100,9 +123,28 @@ export function createAddRaydiumPoolTool(pluginConfig?: UmiConfig) {
           owner: bucketSigner,
         });
 
-        const startCondition = timeCondition(
-          parseTime(params.startTime ?? "now")
-        );
+        let startTimeInput: string | number = params.startTime ?? "now";
+
+        // If caller omitted startTime but provided a LaunchPool bucket index, derive start time
+        // from the LaunchPool deposit end time (+ optional offset). This avoids subtle drift
+        // when depositStartTime is "now".
+        if (params.startTime == null && params.startTimeFromLaunchpoolBucketIndex != null) {
+          const [lpBucket] = findLaunchPoolBucketV2Pda(umi, {
+            genesisAccount: genesisAccountPk,
+            bucketIndex: params.startTimeFromLaunchpoolBucketIndex,
+          });
+          const lpData = await safeFetchLaunchPoolBucketV2(umi, lpBucket);
+          if (!lpData) {
+            throw new Error(
+              `Cannot derive Raydium startTime: LaunchPool bucket index ${params.startTimeFromLaunchpoolBucketIndex} not found.`
+            );
+          }
+          const depositEnd = lpData.depositEndCondition.time; // bigint unix seconds
+          const offset = BigInt(params.startTimeOffsetSeconds ?? 60);
+          startTimeInput = (depositEnd + offset).toString();
+        }
+
+        const startCondition = timeCondition(parseTime(startTimeInput));
 
         await transactionBuilder()
           .add(setComputeUnitLimit(umi, { units: 400_000 }))

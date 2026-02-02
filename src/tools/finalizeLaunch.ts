@@ -71,6 +71,24 @@ export function createFinalizeLaunchTool(pluginConfig?: UmiConfig) {
           isWritable: boolean;
         }[] = [];
 
+        // IMPORTANT: Remaining account order matters for Genesis finalize.
+        // Empirically, the program expects Raydium buckets first, then LaunchPool, then Unlocked.
+        // (If ordered incorrectly, finalize can fail with confusing errors like
+        // "LaunchPool bucket is missing a required graduation behavior".)
+
+        // Add raydium buckets
+        for (const idx of params.raydiumBucketIndexes ?? []) {
+          const [bucketPk] = findRaydiumCpmmBucketV2Pda(umi, {
+            genesisAccount: genesisAccountPk,
+            bucketIndex: idx,
+          });
+          remainingAccounts.push({
+            pubkey: bucketPk,
+            isSigner: false,
+            isWritable: false,
+          });
+        }
+
         // Add launchpool buckets
         for (const idx of params.launchpoolBucketIndexes ?? []) {
           const [bucketPk] = findLaunchPoolBucketV2Pda(umi, {
@@ -87,19 +105,6 @@ export function createFinalizeLaunchTool(pluginConfig?: UmiConfig) {
         // Add unlocked buckets
         for (const idx of params.unlockedBucketIndexes ?? []) {
           const [bucketPk] = findUnlockedBucketV2Pda(umi, {
-            genesisAccount: genesisAccountPk,
-            bucketIndex: idx,
-          });
-          remainingAccounts.push({
-            pubkey: bucketPk,
-            isSigner: false,
-            isWritable: false,
-          });
-        }
-
-        // Add raydium buckets
-        for (const idx of params.raydiumBucketIndexes ?? []) {
-          const [bucketPk] = findRaydiumCpmmBucketV2Pda(umi, {
             genesisAccount: genesisAccountPk,
             bucketIndex: idx,
           });
