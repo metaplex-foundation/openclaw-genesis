@@ -9,7 +9,7 @@ import {
   addLaunchPoolBucketV2Extensions,
   setLaunchPoolBucketV2Behaviors,
   findLaunchPoolBucketV2Pda,
-  findGenesisAccountV2Pda,
+  safeFetchLaunchPoolBucketV2,
   fetchGenesisAccountV2,
   WRAPPED_SOL_MINT,
   type LaunchPoolV2ExtensionArgs,
@@ -104,6 +104,16 @@ export function createAddLaunchpoolTool(pluginConfig?: UmiConfig) {
         const umi = getUmi(pluginConfig);
         const genesisAccountPk = publicKey(params.genesisAccount);
         const bucketIndex = params.bucketIndex ?? 0;
+        const debug: Record<string, unknown> = {
+          genesisAccount: params.genesisAccount,
+          bucketIndex,
+          tokenAllocationPercent: params.tokenAllocationPercent,
+          depositStartTime: params.depositStartTime ?? "now",
+          depositDurationHours: params.depositDurationHours,
+          claimDelayHours: params.claimDelayHours ?? 0,
+          claimDurationHours: params.claimDurationHours,
+          sendQuoteTokenToRaydiumBucketIndex: params.sendQuoteTokenToRaydiumBucketIndex ?? null,
+        };
 
         // Fetch genesis account to get total supply
         const genesisData = await fetchGenesisAccountV2(umi, genesisAccountPk);
@@ -115,6 +125,8 @@ export function createAddLaunchpoolTool(pluginConfig?: UmiConfig) {
           params.tokenAllocationPercent,
           totalSupply
         );
+        debug.totalSupply = totalSupply.toString();
+        debug.baseTokenAllocation = baseTokenAllocation.toString();
 
         // Calculate time conditions
         const depositStart = parseTime(params.depositStartTime ?? "now");
@@ -129,25 +141,37 @@ export function createAddLaunchpoolTool(pluginConfig?: UmiConfig) {
           bucketIndex,
         });
 
-        // Step 1: Create base bucket
-        await transactionBuilder()
-          .add(setComputeUnitLimit(umi, { units: 400_000 }))
-          .add(
-            addLaunchPoolBucketV2Base(umi, {
-              genesisAccount: genesisAccountPk,
-              baseMint,
-              bucketIndex,
-              padding: PADDING_6,
-              baseTokenAllocation,
-              depositStartCondition: timeCondition(depositStart),
-              depositEndCondition: timeCondition(depositEnd),
-              claimStartCondition: timeCondition(claimStart),
-              claimEndCondition: timeCondition(claimEnd),
-            })
-          )
-          .sendAndConfirm(umi);
+        // Step 1: Create base bucket (idempotent-ish)
+        // If a previous run created the bucket but failed later (e.g. behavior wiring),
+        // re-running should skip creation and proceed to extensions/behaviors.
+        const existing = await safeFetchLaunchPoolBucketV2(umi, bucket);
+        debug.bucketPda = bucket.toString();
+        debug.bucketExists = !!existing;
+        if (!existing) {
+          await transactionBuilder()
+            .add(setComputeUnitLimit(umi, { units: 400_000 }))
+            .add(
+              addLaunchPoolBucketV2Base(umi, {
+                genesisAccount: genesisAccountPk,
+                baseMint,
+                bucketIndex,
+                padding: PADDING_6,
+                baseTokenAllocation,
+                depositStartCondition: timeCondition(depositStart),
+                depositEndCondition: timeCondition(depositEnd),
+                claimStartCondition: timeCondition(claimStart),
+                claimEndCondition: timeCondition(claimEnd),
+              })
+            )
+            .sendAndConfirm(umi);
+        }
 
         // Step 2: Add extensions if needed
+        // Stash debug on global so we can include it in error returns.
+        // (Tool responses don't have access to locals in the catch block once optimized.)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (globalThis as any).__openclawGenesisDebug = debug;
+
         const extensions: LaunchPoolV2ExtensionArgs[] = [];
 
         if (params.minimumRaiseSol != null) {
@@ -221,18 +245,24 @@ export function createAddLaunchpoolTool(pluginConfig?: UmiConfig) {
           details: result,
         };
       } catch (err) {
+        const errorObj: any = {
+          status: "error",
+          error: err instanceof Error ? err.message : String(err),
+        };
+        // Best-effort attach debug fields if present.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const maybeDebug = (globalThis as any).__openclawGenesisDebug;
+          if (maybeDebug && typeof maybeDebug === "object") {
+            errorObj.debug = maybeDebug;
+          }
+        } catch {}
+
         return {
           content: [
             {
               type: "text" as const,
-              text: JSON.stringify(
-                {
-                  status: "error",
-                  error: err instanceof Error ? err.message : String(err),
-                },
-                null,
-                2
-              ),
+              text: JSON.stringify(errorObj, null, 2),
             },
           ],
         };

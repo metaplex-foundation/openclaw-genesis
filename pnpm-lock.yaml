@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@metaplex-foundation/genesis':
-        specifier: file:/Users/kelliott/ChatTGE/genesis/clients/js
-        version: file:../../../ChatTGE/genesis/clients/js(@metaplex-foundation/umi@1.4.1)
+        specifier: ^0.17.0
+        version: 0.17.0(@metaplex-foundation/umi@1.4.1)
       '@metaplex-foundation/mpl-token-metadata':
         specifier: ^3.4.0
         version: 3.4.0(@metaplex-foundation/umi@1.4.1)
@@ -167,8 +167,8 @@ packages:
   '@irys/web-upload@0.0.15':
     resolution: {integrity: sha512-ajwy+CHEL+OH6UpO3dDT6xAK5XmJy2xK9Qb4aj+7uphSUczEiSxuSsO0sz/ekAgO/Ymwgkdozk3U1WAnUjbxMg==}
 
-  '@metaplex-foundation/genesis@file:../../../ChatTGE/genesis/clients/js':
-    resolution: {directory: ../../../ChatTGE/genesis/clients/js, type: directory}
+  '@metaplex-foundation/genesis@0.17.0':
+    resolution: {integrity: sha512-a9ynmscdgVS1kBf1EJoNSktfmNa4KBqMcIewL91KU339LJzGq34rtX15tVq1cw+NlSjz2iIJhaXubNJ5LbSgTQ==}
     peerDependencies:
       '@metaplex-foundation/umi': ^1.4.1
 
@@ -1557,7 +1557,7 @@ snapshots:
       - encoding
       - utf-8-validate
 
-  '@metaplex-foundation/genesis@file:../../../ChatTGE/genesis/clients/js(@metaplex-foundation/umi@1.4.1)':
+  '@metaplex-foundation/genesis@0.17.0(@metaplex-foundation/umi@1.4.1)':
     dependencies:
       '@metaplex-foundation/mpl-token-metadata': 3.4.0(@metaplex-foundation/umi@1.4.1)
       '@metaplex-foundation/mpl-toolbox': 0.10.0(@metaplex-foundation/umi@1.4.1)

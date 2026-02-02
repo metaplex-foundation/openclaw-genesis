@@ -13,7 +13,7 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@metaplex-foundation/genesis": "file:/Users/kelliott/ChatTGE/genesis/clients/js",
+    "@metaplex-foundation/genesis": "^0.17.0",
     "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
     "@metaplex-foundation/mpl-toolbox": "^0.10.0",
     "@metaplex-foundation/umi": "^1.4.1",
