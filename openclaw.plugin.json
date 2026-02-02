@@ -1,0 +1,42 @@
+{
+  "id": "genesis",
+  "name": "Metaplex Genesis",
+  "description": "Launch tokens on Solana using Metaplex Genesis protocol",
+  "version": "0.1.0",
+  "skills": ["./skills/genesis-launch"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "keypairPath": {
+        "type": "string",
+        "description": "Path to Solana keypair JSON file"
+      },
+      "rpcUrl": {
+        "type": "string",
+        "description": "Solana RPC endpoint URL"
+      },
+      "network": {
+        "type": "string",
+        "enum": ["mainnet", "devnet"],
+        "description": "Solana network (mainnet or devnet)"
+      }
+    }
+  },
+  "uiHints": {
+    "keypairPath": {
+      "label": "Keypair Path",
+      "help": "Path to your Solana keypair JSON file (e.g. ~/.config/solana/id.json)",
+      "placeholder": "~/.config/solana/id.json"
+    },
+    "rpcUrl": {
+      "label": "RPC URL",
+      "help": "Solana RPC endpoint. Falls back to SOLANA_RPC_URL env var.",
+      "placeholder": "https://api.mainnet-beta.solana.com"
+    },
+    "network": {
+      "label": "Network",
+      "help": "Solana network for Raydium config selection"
+    }
+  }
+}

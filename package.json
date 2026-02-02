@@ -1,0 +1,25 @@
+{
+  "name": "@openclaw/genesis",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin for launching tokens with Metaplex Genesis",
+  "type": "module",
+  "main": "index.ts",
+  "openclaw": {
+    "extensions": ["./index.ts"]
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@metaplex-foundation/genesis": "file:/Users/kelliott/ChatTGE/genesis/clients/js",
+    "@metaplex-foundation/mpl-token-metadata": "^3.4.0",
+    "@metaplex-foundation/mpl-toolbox": "^0.10.0",
+    "@metaplex-foundation/umi": "^1.4.1",
+    "@metaplex-foundation/umi-bundle-defaults": "^1.4.1",
+    "@metaplex-foundation/umi-uploader-irys": "^1.0.0",
+    "@sinclair/typebox": "0.34.48"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
